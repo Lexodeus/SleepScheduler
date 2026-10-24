@@ -1,13 +1,20 @@
 {
   "name": "sleep-scheduler",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Schedule times for the Steam Deck to go to sleep and wake up",
   "type": "module",
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c -w"
   },
-  "keywords": ["decky", "plugin", "steam-deck", "sleep", "wake", "schedule"],
+  "keywords": [
+    "decky",
+    "plugin",
+    "steam-deck",
+    "sleep",
+    "wake",
+    "schedule"
+  ],
   "author": "Lexodeus",
   "license": "GPL-3.0",
   "devDependencies": {
@@ -26,7 +33,10 @@
   },
   "pnpm": {
     "peerDependencyRules": {
-      "ignoreMissing": ["react", "react-dom"]
+      "ignoreMissing": [
+        "react",
+        "react-dom"
+      ]
     }
   }
 }

@@ -55,3 +55,7 @@ out/*
 cli/
 cli/*
 cli/decky
+
+# Local Claude Code settings
+.claude/settings.local.json
+.claude/worktrees
