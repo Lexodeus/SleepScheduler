@@ -12,6 +12,10 @@ ALARM = "/sys/class/rtc/rtc0/wakealarm"
 SCHEDULE_FILE = os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "schedule.json")
 KINDS = ("sleep", "wake")
 
+# Requests from the Mac's App Dashboard, copied in over SSH as the deck user: one <id>.json per request
+# ({id, source, label, events: [{kind, at, note}]}). Each is applied once, then replaced by <id>.result.json.
+INBOX = os.path.join(decky.DECKY_USER_HOME, ".local/share/sleep-scheduler/inbox")
+
 # A sleep missed by more than this (the Deck was already asleep or off) is dropped instead of run late
 SLEEP_GRACE = 120
 # Seconds before a sleep that the "going to sleep" toast shows
@@ -37,6 +41,15 @@ def _read_alarm():
         return None
 
 
+def _event(kind, at, source=None, note=None, event_id=None):
+    e = {"id": event_id or uuid.uuid4().hex[:8], "kind": kind, "at": int(at)}
+    if source:
+        e["source"] = str(source)[:40]
+    if note:
+        e["note"] = str(note)[:200]
+    return e
+
+
 def _write_alarm(at):
     # The kernel refuses a new alarm while one is set, so clear it first
     with open(ALARM, "w") as f:
@@ -60,7 +73,7 @@ class Plugin:
             with open(SCHEDULE_FILE) as f:
                 data = json.load(f)
             self.events = [
-                {"id": str(e["id"]), "kind": e["kind"], "at": int(e["at"])}
+                _event(e["kind"], e["at"], e.get("source"), e.get("note"), str(e["id"]))
                 for e in data.get("events", [])
                 if e.get("kind") in KINDS
             ]
@@ -131,7 +144,57 @@ class Plugin:
         decky.logger.warning("Steam did not start the suspend; suspending through systemd")
         subprocess.run(["systemctl", "suspend"], env=_clean_env(), check=False)
 
+    # ---- requests from the App Dashboard ----
+
+    async def _read_inbox(self):
+        try:
+            names = sorted(n for n in os.listdir(INBOX) if n.endswith(".json") and not n.endswith(".result.json"))
+        except FileNotFoundError:
+            return
+        for name in names:
+            path = os.path.join(INBOX, name)
+            result = {"ok": False}
+            try:
+                with open(path) as f:
+                    req = json.load(f)
+                result = self._apply_request(req)
+            except Exception as e:
+                result["error"] = f"Could not apply the request: {e}"
+                decky.logger.error(f"Inbox {name}: {e!r}")
+            try:
+                os.remove(path)
+                out = os.path.join(INBOX, name[: -len(".json")] + ".result.json")
+                with open(out, "w") as f:
+                    json.dump(result, f)
+                os.chmod(out, 0o644)
+            except Exception as e:
+                decky.logger.error(f"Inbox {name}: could not write the result: {e!r}")
+            await self._changed()
+
+    def _apply_request(self, req):
+        """Replace the events from the same source with the request's future events."""
+        source = str(req.get("source") or "dashboard")[:40]
+        now = time.time()
+        added, skipped = [], []
+        new = []
+        for e in req.get("events", []):
+            kind, at = e.get("kind"), int(e.get("at", 0))
+            if kind not in KINDS:
+                raise ValueError(f"Unknown event type {kind}")
+            if at <= now:
+                skipped.append({"kind": kind, "at": at, "why": "already passed"})
+                continue
+            new.append(_event(kind, at, source, e.get("note")))
+        removed = len([e for e in self.events if e.get("source") == source])
+        self.events = [e for e in self.events if e.get("source") != source] + new
+        for e in new:
+            self.warned.discard(e["id"])
+            added.append({"kind": e["kind"], "at": e["at"]})
+        decky.logger.info(f"Dashboard request {req.get('id')} ({source}): added {len(added)}, replaced {removed}, skipped {len(skipped)}")
+        return {"ok": True, "added": added, "replaced": removed, "skipped": skipped}
+
     async def _tick(self):
+        await self._read_inbox()
         now = time.time()
         due = [e for e in self.events if e["at"] <= now]
         sleep_id = None

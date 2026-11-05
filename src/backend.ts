@@ -10,6 +10,9 @@ export interface ScheduledEvent {
   kind: EventKind;
   /** Unix time in seconds */
   at: number;
+  /** Set by the App Dashboard: which button sent it ("fish", "subs") and why this time */
+  source?: string;
+  note?: string;
 }
 
 export interface ScheduleState {

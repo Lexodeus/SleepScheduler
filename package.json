@@ -1,6 +1,6 @@
 {
   "name": "sleep-scheduler",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Schedule times for the Steam Deck to go to sleep and wake up",
   "type": "module",
   "scripts": {

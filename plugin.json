@@ -16,5 +16,5 @@
     "description": "Schedule times for the Steam Deck to go to sleep and wake up.",
     "image": ""
   },
-  "Changelog": "## 0.1.1 (2026-10-24)\n\n- Pick a date as well as a time, up to 30 days ahead. It starts on today, and a time that has already passed today moves to tomorrow.\n\n### Fixes\n\n- Choosing an hour, minute or AM/PM now sticks instead of jumping back to the starting time."
+  "Changelog": "## 0.1.2 (2026-11-04)\n\n- Wake and sleep times can be sent from the App Dashboard on the Mac (fish runs and submarine returns). Each upcoming event shows why it was scheduled, and sending again replaces the earlier times from the same button."
 }

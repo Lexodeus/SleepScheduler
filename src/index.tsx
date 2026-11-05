@@ -207,6 +207,7 @@ function EventRow({ event, now }: { event: ScheduledEvent; now: number }) {
       <Field label={`${kindLabels[event.kind]} at ${formatClock(event.at)}`} childrenLayout="below">
         <div style={{ ...noteStyle, marginTop: 0, marginBottom: "8px" }}>
           {`${formatDay(event.at, now)}, ${formatRelative(event.at, now)}`}
+          {event.note ? <div>{event.note}</div> : null}
         </div>
         <Focusable style={rowStyle}>
           <DialogButton style={smallButton} onClick={() => setEditing(event.id)}>

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2 (2026-11-04)
+
+- Wake and sleep times can be sent from the App Dashboard on the Mac (fish runs and submarine returns). Each upcoming event shows why it was scheduled, and sending again replaces the earlier times from the same button.
+
 ## 0.1.1 (2026-10-24)
 
 - Pick a date as well as a time, up to 30 days ahead. It starts on today, and a time that has already passed today moves to tomorrow.
